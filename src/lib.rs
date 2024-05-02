@@ -1,6 +1,7 @@
-/// A conceptional function or procedure providing strong exception safety guarantees. An instance
-/// is associated with a specific invocation.
-pub trait Func: Sized {
+/// An instance is associated with a specific invocation of a function offering storng execption
+/// safety guarantees. Implmenters of this function are encouraged to hold the arguments of the
+/// function invocation as members.
+pub trait Invocation: Sized {
     type Error;
     type Output;
     type IntermediateState;
@@ -16,12 +17,12 @@ pub trait Func: Sized {
     }
 }
 
-/// Use this to combine two invocation, while maintaining strong exception safety guarantee. This
+/// Use this to chain two invocation, while maintaining strong exception safety guarantee. This
 /// only works if the error types of both functions are identical.
-impl<F1, F2> Func for (F1, F2)
+impl<F1, F2> Invocation for (F1, F2)
 where
-    F1: Func,
-    F2: Func<Error = F1::Error>,
+    F1: Invocation,
+    F2: Invocation<Error = F1::Error>,
 {
     type Error = F1::Error;
     type Output = (F1::Output, F2::Output);
@@ -44,7 +45,7 @@ mod tests {
     struct Constant;
     struct DummyState;
 
-    impl Func for Constant {
+    impl Invocation for Constant {
         type Error = ();
         type Output = i32;
         type IntermediateState = DummyState;
@@ -66,7 +67,7 @@ mod tests {
         }
     }
 
-    impl<A> Func for Identity<A> {
+    impl<A> Invocation for Identity<A> {
         type Error = ();
         type Output = A;
         type IntermediateState = ();
